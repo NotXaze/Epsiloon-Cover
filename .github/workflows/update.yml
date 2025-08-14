@@ -1,44 +1,59 @@
-name: Update Cover
+name: Génération et push de cover
 
 on:
-  workflow_dispatch:   # Permet de lancer manuellement le workflow
   push:
     branches:
-      - main          # Se déclenche sur push sur main si besoin
+      - main
+  workflow_dispatch:
 
 jobs:
-  update-cover:
+  build-and-push:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
 
-      - name: Setup Python
+    steps:
+      # 1️⃣ Cloner le dépôt
+      - name: Checkout du dépôt
+        uses: actions/checkout@v3
+
+      # 2️⃣ Configurer Python (si besoin pour générer cover.jpg)
+      - name: Configurer Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: 3.13
 
-      - name: Test PAT
+      # 3️⃣ Générer cover.jpg
+      - name: Générer cover.jpg
         run: |
-          echo "Test d'accès avec le PAT..."
-          curl -H "Authorization: token ${{ secrets.PAT_TOKEN }}" https://api.github.com/repos/NotXaze/Epsiloon-Cover
-        shell: bash
+          # Ici tu mets ta commande pour générer cover.jpg
+          # Exemple temporaire :
+          echo "Image de test" > cover.jpg
 
-      - name: Commit and push cover
-        run: |
-          # Configurer l'utilisateur Git
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-
-          # Ajouter et committer la couverture
-          git add cover.jpg
-          git commit -m "Mise à jour couverture" || echo "Aucune modification"
-
-          # Remplacer l'URL du remote par celle avec le PAT pour push
-          git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/NotXaze/Epsiloon-Cover.git
-
-          # Pousser les modifications sur la branche principale
-          git push origin HEAD:main
+      # 4️⃣ Commit et push uniquement si cover.jpg existe et a changé
+      - name: Commit et push cover.jpg
         shell: bash
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          # Configurer Git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # Vérifier si le fichier existe
+          if [ -f "cover.jpg" ]; then
+            git add cover.jpg
+
+            # Commit seulement s'il y a des changements
+            if git diff --cached --quiet; then
+              echo "Aucune modification à commit."
+            else
+              git commit -m "Mise à jour couverture"
+
+              # Configurer le remote avec le PAT pour autoriser le push
+              git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/NotXaze/Epsiloon-Cover.git
+
+              # Pousser sur la branche principale
+              git push origin HEAD:main
+            fi
+          else
+            echo "cover.jpg n'existe pas, rien à pousser."
+          fi
