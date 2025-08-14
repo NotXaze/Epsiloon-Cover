@@ -1,32 +1,39 @@
-name: Mettre à jour la couverture Epsiloon
+name: Update Epsiloon Cover
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 6h UTC = 8h France
-  workflow_dispatch:
+    # Tous les jours à 08:00 UTC (ajuste selon ton fuseau horaire)
+    - cron: '0 8 * * *'
+  workflow_dispatch:  # permet de lancer manuellement
 
 jobs:
   update-cover:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Installer Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.13
 
-      - name: Installer les dépendances
-        run: |
-          pip install requests beautifulsoup4 pillow
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
 
-      - name: Scraper et mettre à jour l'image
-        run: python scrape.py
+    - name: Scrape Cover
+      run: |
+        python scrape.py
 
-      - name: Commit et push
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add cover.jpg
-          git commit -m "Mise à jour couverture" || echo "Pas de changement"
-          git push
+    - name: Commit and Push Cover
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add cover.jpg
+        git commit -m "Mise à jour couverture" || echo "Aucune modification"
+        git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:main
