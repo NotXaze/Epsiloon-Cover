@@ -1,13 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.ssl_ import create_urllib3_context
+import ssl
+from urllib3.poolmanager import PoolManager
 
 # Adapter TLS 1.2+
 class TLSAdapter(HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
-        ctx = create_urllib3_context()
-        ctx.minimum_version = 2  # TLS 1.2 minimum
+        ctx = ssl.create_default_context()
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
         kwargs['ssl_context'] = ctx
         return super().init_poolmanager(*args, **kwargs)
 
