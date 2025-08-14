@@ -4,51 +4,35 @@ on:
   schedule:
     # Tous les jours à 08:00 UTC
     - cron: '0 8 * * *'
-  workflow_dispatch:
+  workflow_dispatch:  # permet de lancer manuellement
 
 jobs:
   update-cover:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout avec token
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0  # nécessaire pour créer une PR si branche protégée
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2️⃣ Installer Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.13
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.13
 
-      # 3️⃣ Installer dépendances Python
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
 
-      # 4️⃣ Scraper la couverture
-      - name: Scrape Cover
-        run: python scrape.py
+    - name: Scrape Cover
+      run: python scrape.py
 
-      # 5️⃣ Commit des modifications
-      - name: Commit Cover
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add cover.jpg
-          git commit -m "Mise à jour couverture" || echo "Aucune modification"
-
-      # 6️⃣ Pousser vers une branche dédiée et créer un PR
-      - name: Push and Create PR
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Mise à jour couverture"
-          branch: update-cover-${{ github.run_number }}
-          title: "Mise à jour couverture"
-          body: "Mise à jour automatique de la couverture du magazine Epsiloon."
-          base: main
+    - name: Commit and Push Cover
+      env:
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # Ton PAT stocké dans les secrets
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add cover.jpg
+        git commit -m "Mise à jour couverture" || echo "Aucune modification"
+        git push https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }} HEAD:main
