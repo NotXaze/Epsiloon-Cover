@@ -1,47 +1,44 @@
-name: Update Epsiloon Cover
+name: Update Cover
 
 on:
-  schedule:
-    # Tous les jours à 08:00 UTC (ajuste selon ton fuseau horaire)
-    - cron: '0 8 * * *'
-  workflow_dispatch:  # permet de lancer manuellement
+  workflow_dispatch:   # Permet de lancer manuellement le workflow
+  push:
+    branches:
+      - main          # Se déclenche sur push sur main si besoin
 
 jobs:
   update-cover:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.13
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests beautifulsoup4
+      - name: Test PAT
+        run: |
+          echo "Test d'accès avec le PAT..."
+          curl -H "Authorization: token ${{ secrets.PAT_TOKEN }}" https://api.github.com/repos/NotXaze/Epsiloon-Cover
+        shell: bash
 
-    - name: Scrape Cover
-      run: |
-        python scrape.py
+      - name: Commit and push cover
+        run: |
+          # Configurer l'utilisateur Git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
 
-    - name: Commit and Push Cover
-      env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # ⚠️ ton PAT doit être défini dans les secrets
-      run: |
-        # Configurer l'utilisateur Git
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
+          # Ajouter et committer la couverture
+          git add cover.jpg
+          git commit -m "Mise à jour couverture" || echo "Aucune modification"
 
-        # Ajouter et committer la couverture
-        git add cover.jpg
-        git commit -m "Mise à jour couverture" || echo "Aucune modification"
+          # Remplacer l'URL du remote par celle avec le PAT pour push
+          git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/NotXaze/Epsiloon-Cover.git
 
-        # Remplacer l'URL du remote par celle avec le PAT pour push
-        git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/NotXaze/Epsiloon-Cover.git
-
-        # Pousser les modifications sur la branche principale
-        git push origin HEAD:main
+          # Pousser les modifications sur la branche principale
+          git push origin HEAD:main
+        shell: bash
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
