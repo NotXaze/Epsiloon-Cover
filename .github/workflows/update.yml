@@ -1,0 +1,32 @@
+name: Mettre à jour la couverture Epsiloon
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 6h UTC = 8h France
+  workflow_dispatch:
+
+jobs:
+  update-cover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Installer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Installer les dépendances
+        run: |
+          pip install requests beautifulsoup4 pillow
+
+      - name: Scraper et mettre à jour l'image
+        run: python scrape.py
+
+      - name: Commit et push
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add cover.jpg
+          git commit -m "Mise à jour couverture" || echo "Pas de changement"
+          git push
