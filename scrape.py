@@ -1,33 +1,56 @@
 import requests
 from bs4 import BeautifulSoup
-from PIL import Image
-from io import BytesIO
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.ssl_ import create_urllib3_context
 
-# URL du site Epsiloon
-url = "https://www.epsiloon.fr"
+# Adapter TLS 1.2+
+class TLSAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = create_urllib3_context()
+        ctx.minimum_version = 2  # TLS 1.2 minimum
+        kwargs['ssl_context'] = ctx
+        return super().init_poolmanager(*args, **kwargs)
 
-# Télécharger la page HTML
-res = requests.get(url)
-res.raise_for_status()
+# Créer la session avec TLS 1.2 et headers
+session = requests.Session()
+session.mount("https://", TLSAdapter())
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+
+url = "https://www.epsiloon.com/les-numeros.html"
+
+try:
+    res = session.get(url, headers=headers, timeout=15)
+    res.raise_for_status()
+except requests.exceptions.RequestException as e:
+    print("Erreur de connexion :", e)
+    exit(1)
+
 soup = BeautifulSoup(res.text, "html.parser")
 
-# Sélectionner la première image dans la structure donnée
-img_tag = soup.select_one("div.magazine__list.magazine__page div.magazine__item a figure img")
-if not img_tag:
-    raise Exception("Image de couverture introuvable – vérifie le sélecteur CSS.")
+# Sélecteur CSS : première image dans la première div.magazine__item
+img_tag = soup.select_one(
+    "div.magazine__list.magazine__page div.magazine__item a figure img"
+)
 
-# Construire l'URL absolue si nécessaire
-img_url = img_tag.get("src")
-if img_url and not img_url.startswith("http"):
-    img_url = requests.compat.urljoin(url, img_url)
+if img_tag and img_tag.get("src"):
+    img_url = img_tag["src"]
+    # Si URL relative, ajouter le domaine
+    if img_url.startswith("/"):
+        img_url = f"https://www.epsiloon.com{img_url}"
+    print("URL de l'image :", img_url)
 
-print("URL trouvée :", img_url)
-
-# Télécharger l'image
-resp = requests.get(img_url)
-resp.raise_for_status()
-image = Image.open(BytesIO(resp.content))
-
-# Sauvegarder en JPG optimisé
-image.convert("RGB").save("cover.jpg", "JPEG", quality=90)
-print("Couverture mise à jour avec succès.")
+    # Télécharger l'image
+    img_res = session.get(img_url, headers=headers, stream=True)
+    if img_res.status_code == 200:
+        with open("cover.jpg", "wb") as f:
+            for chunk in img_res.iter_content(1024):
+                f.write(chunk)
+        print("Image téléchargée avec succès !")
+    else:
+        print("Erreur lors du téléchargement de l'image :", img_res.status_code)
+else:
+    print("Image de couverture introuvable")
