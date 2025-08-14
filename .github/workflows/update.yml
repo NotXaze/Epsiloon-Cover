@@ -2,7 +2,7 @@ name: Update Epsiloon Cover
 
 on:
   schedule:
-    # Tous les jours à 08:00 UTC (ajuste selon ton fuseau horaire)
+    # Tous les jours à 08:00 UTC
     - cron: '0 8 * * *'
   workflow_dispatch:  # permet de lancer manuellement
 
@@ -25,16 +25,18 @@ jobs:
         pip install requests beautifulsoup4
 
     - name: Scrape Cover
-      run: python scrape.py
+      run: |
+        python scrape.py
 
     - name: Commit and Push Cover
+      # ⚠️ Ici, on utilise le PAT au lieu de GITHUB_TOKEN
       env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # 🔹 nouveau secret à créer dans le dépôt
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add cover.jpg
         git commit -m "Mise à jour couverture" || echo "Aucune modification"
-        # Remplace le remote avec ton PAT pour l'authentification
+        # ⚠️ On remplace l'URL de remote par celle avec le PAT pour avoir le droit de push
         git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
-        git push origin HEAD:main
+        git push origin HEAD:main  # ⚠️ push avec PAT
