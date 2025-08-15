@@ -27,10 +27,17 @@ jobs:
         run: python scrape.py
 
       - name: Commit and push cover.jpg if changed
-        if: exists('cover.jpg')
-        uses: peter-evans/commit-push@v3
-        with:
-          commit-message: Mise à jour couverture
-          push: true
-          token: ${{ secrets.PAT_TOKEN }}
-          paths: cover.jpg
+        run: |
+          if [ -f "cover.jpg" ]; then
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add cover.jpg
+            if ! git diff --cached --quiet; then
+              git commit -m "Mise à jour couverture"
+              git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/NotXaze/Epsiloon-Cover.git HEAD:main
+            else
+              echo "Aucune modification à commit."
+            fi
+          else
+            echo "cover.jpg n'existe pas, rien à pousser."
+          fi
