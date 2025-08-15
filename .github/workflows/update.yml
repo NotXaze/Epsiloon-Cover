@@ -8,23 +8,29 @@ on:
 jobs:
   update-cover:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Récupérer le dépôt
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ Installer Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.13'
 
+      # 3️⃣ Installer les dépendances nécessaires
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4
 
+      # 4️⃣ Lancer ton script de scraping
       - name: Run scraper
         run: python scrape.py
 
+      # 5️⃣ Commit et push si cover.jpg a changé
       - name: Commit and push cover.jpg if changed
         uses: peter-evans/commit-and-push-action@v5
         with:
