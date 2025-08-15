@@ -2,8 +2,8 @@ name: Update Cover
 
 on:
   schedule:
-    - cron: '0 8 * * *' # tous les jours à 08:00 UTC
-  workflow_dispatch: # permet de lancer manuellement
+    - cron: '0 8 * * *' # tous les jours à 8h
+  workflow_dispatch:
 
 jobs:
   update-cover:
@@ -23,11 +23,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4
 
-      - name: Run scrape script
+      - name: Run scraper
         run: python scrape.py
 
       - name: Commit and push cover.jpg if changed
-        uses: peter-evans/commit-and-push-action@v4
+        if: exists('cover.jpg')
+        uses: peter-evans/commit-push@v3
         with:
           commit-message: Mise à jour couverture
           push: true
