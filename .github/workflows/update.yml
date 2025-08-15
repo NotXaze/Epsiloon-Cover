@@ -2,49 +2,46 @@ name: Update Cover
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # tous les jours à 8h UTC
-  workflow_dispatch:      # permet de lancer manuellement si besoin
+    - cron: '0 8 * * *'  # Exécution tous les jours à 8h UTC
+  workflow_dispatch:      # Permet de lancer manuellement le workflow
 
 jobs:
   update-cover:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Vérifier le repo
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2️⃣ Installer Python
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
 
-      # 3️⃣ Installer les dépendances
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install requests
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install requests beautifulsoup4
 
-      # 4️⃣ Lancer le script Python
-      - name: Run scrape
-        run: python scrape.py
+    - name: Run scraper
+      run: python scrape.py
 
-      # 5️⃣ Ajouter et pousser cover.jpg si changé
-      - name: Commit & Push cover.jpg
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+    - name: Commit and push cover
+      env:
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
 
-          if [ -f "cover.jpg" ]; then
-            git add cover.jpg
-            if git diff --cached --quiet; then
-              echo "Aucune modification à commit."
-            else
-              git commit -m "Mise à jour couverture"
-              git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/NotXaze/Epsiloon-Cover.git
-              git push origin HEAD:main
-            fi
+        if [ -f "cover.jpg" ]; then
+          git add cover.jpg
+          if git diff --cached --quiet; then
+            echo "Aucune modification à commit."
           else
-            echo "cover.jpg n'existe pas, rien à pousser."
-        shell: /usr/bin/bash -e
+            git commit -m "Mise à jour couverture"
+            git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/NotXaze/Epsiloon-Cover.git
+            git push origin HEAD:main
+          fi
+        else
+          echo "cover.jpg n'existe pas, rien à pousser."
+        fi
