@@ -2,46 +2,34 @@ name: Update Cover
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # Exécution tous les jours à 8h UTC
-  workflow_dispatch:      # Permet de lancer manuellement le workflow
+    - cron: '0 8 * * *' # tous les jours à 08:00 UTC
+  workflow_dispatch: # permet de lancer manuellement
 
 jobs:
   update-cover:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.13
 
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install requests beautifulsoup4
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
 
-    - name: Run scraper
-      run: python scrape.py
+      - name: Run scrape script
+        run: python scrape.py
 
-    - name: Commit and push cover
-      env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-
-        if [ -f "cover.jpg" ]; then
-          git add cover.jpg
-          if git diff --cached --quiet; then
-            echo "Aucune modification à commit."
-          else
-            git commit -m "Mise à jour couverture"
-            git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/NotXaze/Epsiloon-Cover.git
-            git push origin HEAD:main
-          fi
-        else
-          echo "cover.jpg n'existe pas, rien à pousser."
-        fi
+      - name: Commit and push cover.jpg if changed
+        uses: peter-evans/commit-and-push-action@v4
+        with:
+          commit-message: Mise à jour couverture
+          push: true
+          token: ${{ secrets.PAT_TOKEN }}
+          paths: cover.jpg
