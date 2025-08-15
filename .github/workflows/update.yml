@@ -2,38 +2,36 @@ name: Update Cover
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "0 8 * * *" # Tous les jours à 8h UTC
 
 jobs:
   update-cover:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Récupérer le dépôt
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Important pour pouvoir pousser
 
-      - name: Installer Python (si besoin)
+      # 2️⃣ Installer Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: "3.x"
 
-      - name: Générer cover.jpg
-        run: |
-          # Remplace cette partie par ton script de génération
-          echo "Hello Cover" > cover.jpg
+      # 3️⃣ Exécuter scrape.py pour générer cover.jpg
+      - name: Run scrape.py
+        run: python scrape.py
 
-      - name: Configurer Git
+      # 4️⃣ Commit et push avec PAT
+      - name: Commit and Push cover.jpg
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-      - name: Commit et Push si modification
-        run: |
           if [ -f "cover.jpg" ]; then
+            echo "cover.jpg trouvé ✅"
             git add cover.jpg
             if git diff --cached --quiet; then
               echo "Aucune modification à commit."
@@ -43,5 +41,5 @@ jobs:
               git push origin HEAD:main
             fi
           else
-            echo "cover.jpg n'existe pas, rien à pousser."
+            echo "cover.jpg n'existe pas ❌"
           fi
